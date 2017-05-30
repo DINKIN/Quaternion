@@ -102,20 +102,20 @@ void RoomListDock::rowSelected(const QModelIndex& index)
 
 void RoomListDock::showContextMenu(const QPoint& pos)
 {
-    QModelIndex index = view->indexAt(view->mapFromParent(pos));
-    if( !index.isValid() )
+    auto room = getCurrentRoom();
+    if(!room)
         return;
-    auto room = model->roomAt(index.row());
 
-    if( room->joinState() == QMatrixClient::JoinState::Join )
+    using QMatrixClient::JoinState;
+    auto state = room->joinState();
+    joinAction->setEnabled(state == JoinState::Leave || state == JoinState::Invite);
+    if (state == JoinState::Invite || state == JoinState::Join)
     {
-        joinAction->setEnabled(false);
         leaveAction->setEnabled(true);
-        markAsReadAction->setEnabled(true);
+        markAsReadAction->setEnabled(room->hasUnreadMessages());
     }
     else
     {
-        joinAction->setEnabled(true);
         leaveAction->setEnabled(false);
         markAsReadAction->setEnabled(false);
     }
@@ -123,7 +123,7 @@ void RoomListDock::showContextMenu(const QPoint& pos)
     contextMenu->popup(mapToGlobal(pos));
 }
 
-QuaternionRoom* RoomListDock::getSelectedRoom() const
+QuaternionRoom* RoomListDock::getCurrentRoom() const
 {
     QModelIndex index = view->currentIndex();
     return !index.isValid() ? nullptr : model->roomAt(index.row());
@@ -132,7 +132,7 @@ QuaternionRoom* RoomListDock::getSelectedRoom() const
 void RoomListDock::menuJoinSelected()
 {
     // The user has been invited to the room
-    if (auto room = getSelectedRoom())
+    if (auto room = getCurrentRoom())
     {
         Q_ASSERT(room->connection());
         room->connection()->joinRoom(room->id());
@@ -141,12 +141,12 @@ void RoomListDock::menuJoinSelected()
 
 void RoomListDock::menuLeaveSelected()
 {
-    if (auto room = getSelectedRoom())
+    if (auto room = getCurrentRoom())
         room->leaveRoom();
 }
 
 void RoomListDock::menuMarkReadSelected()
 {
-    if (auto room = getSelectedRoom())
+    if (auto room = getCurrentRoom())
         room->markAllMessagesAsRead();
 }

@@ -54,5 +54,5 @@ class RoomListDock : public QDockWidget
         QAction* leaveAction;
         QAction* markAsReadAction;
 
-        QuaternionRoom* getSelectedRoom() const;
+        QuaternionRoom* getCurrentRoom() const;
 };
